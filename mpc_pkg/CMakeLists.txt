@@ -123,6 +123,10 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
 )
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(Eigen3 REQUIRED)
+
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -137,7 +141,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(test src/test.cpp)
+## add_executable(test src/test.cpp)
+add_executable(mpc_control src/mpc_control.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -150,7 +155,7 @@ add_executable(test src/test.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(test
+target_link_libraries(mpc_control
   ${catkin_LIBRARIES}
 )
 
