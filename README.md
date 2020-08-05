@@ -64,3 +64,39 @@ This is the executable running the local MPC controller. Such a controller inter
 ```
 ./mpc/mpc_shm_ctrl ./mpc/uav12_iris.json
 ```
+
+## Compiling ros
+
+From simulator root, run:
+
+```bash
+catkin_make
+```
+
+This compiles all of the simulator code, including the MPC submodule.
+
+## Launching ROS
+
+** To do: place mpc launch files in folder **
+
+There are two programs to run with ROS.
+
+1. In a terminal, run:
+```bash
+roslaunch iris_simulator_pk iris_mpc.launch
+```
+
+This starts everything that is needed for the simulator. Note: the simulator is NOT included in this repo. This repo serves as a place to put all mpc controller code and is submodule for the ROS simulator.
+
+2. In a terminal, run:
+```bash
+rosrun mpc_pkg mpc_control
+```
+
+This starts the MPC controller.
+
+## Makin the quadrotor move.
+
+1. Select the "keyboard" input window
+2. Press 3 to launch
+3. Press 1 to move in a house formation
