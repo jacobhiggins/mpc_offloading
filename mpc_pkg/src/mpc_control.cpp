@@ -315,33 +315,39 @@ int main(int argc, char **argv){
 	 * ros::Rate rate(RATE);
 	 */
 	ros::Rate rate(100);
-	
-	n.getParam("param",sim_type);
-	ROS_INFO("sim type: %s",sim_type.c_str());
-	
-	if(sim_type.compare("matlab")==0) {
-		position_cmd_sub = n.subscribe("/matlab_position_cmd",
-					       10,&position_Matlab_cmd_cb,
-					       ros::TransportHints().tcpNoDelay());
-		odom_sub= n.subscribe("/iris_matlab_odom",
-				      10,&odom_matlab_cb,
-				      ros::TransportHints().tcpNoDelay());
-	} else if(sim_type.compare("ros")==0) {
-		position_cmd_sub = n.subscribe("/iris_position_cmd",
+
+	position_cmd_sub = n.subscribe("/iris_position_cmd",
 					       10, &position_cmd_cb,
 					       ros::TransportHints().tcpNoDelay());
-		odom_sub = n.subscribe("/iris_odom_raw", 10, &odom_cb,
-				       ros::TransportHints().tcpNoDelay());
-	} else if(sim_type.compare("")==0) {
-		std::string message;
-		message = std::string("No simulation type given. Please use rosrun with _param:=<sim_type>.\n");
-		message = message + std::string("Valid sim types are \"matlab\" or \"ros\".");
-		ROS_WARN("%s",message.c_str());
-		std::exit(1);
-	} else {
-		ROS_WARN("Please use parameter \"matlab\" or \"ros\" to indicate simulation.");
-		std::exit(1);
-	}
+	odom_sub = n.subscribe("/iris_odom_raw", 10, &odom_cb,
+				       		ros::TransportHints().tcpNoDelay());
+	
+	// n.getParam("param",sim_type);
+	// ROS_INFO("sim type: %s",sim_type.c_str());
+	
+	// if(sim_type.compare("matlab")==0) {
+	// 	position_cmd_sub = n.subscribe("/matlab_position_cmd",
+	// 				       10,&position_Matlab_cmd_cb,
+	// 				       ros::TransportHints().tcpNoDelay());
+	// 	odom_sub= n.subscribe("/iris_matlab_odom",
+	// 			      10,&odom_matlab_cb,
+	// 			      ros::TransportHints().tcpNoDelay());
+	// } else if(sim_type.compare("ros")==0) {
+	// 	position_cmd_sub = n.subscribe("/iris_position_cmd",
+	// 				       10, &position_cmd_cb,
+	// 				       ros::TransportHints().tcpNoDelay());
+	// 	odom_sub = n.subscribe("/iris_odom_raw", 10, &odom_cb,
+	// 			       ros::TransportHints().tcpNoDelay());
+	// } else if(sim_type.compare("")==0) {
+	// 	std::string message;
+	// 	message = std::string("No simulation type given. Please use rosrun with _param:=<sim_type>.\n");
+	// 	message = message + std::string("Valid sim types are \"matlab\" or \"ros\".");
+	// 	ROS_WARN("%s",message.c_str());
+	// 	std::exit(1);
+	// } else {
+	// 	ROS_WARN("Please use parameter \"matlab\" or \"ros\" to indicate simulation.");
+	// 	std::exit(1);
+	// }
 
 	ros::Time start = ros::Time::now();
 	ros::Duration dt;
