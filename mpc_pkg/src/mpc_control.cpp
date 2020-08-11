@@ -87,6 +87,8 @@ double state[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 double ref[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 double input[4] = {0,0,0,0};
 
+/* Ctrl-C signal handler */
+void term_handler(int signum);
 
 static void publishTRPY(void)
 {
@@ -375,7 +377,7 @@ int main(int argc, char **argv){
 		 */
 		sem_wait(data->sems+MPC_SEM_INPUT_WRITTEN);
 		if (must_exit) {
-			shmdt(msg);
+			shmdt(data);
 			break;
 		}
 		
