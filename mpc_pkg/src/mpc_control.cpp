@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <ros/ros.h>
+#include <errno.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <quadrotor_msgs/SO3Command.h>
@@ -27,16 +28,27 @@
 #include <error.h>
 #include <iostream>
 #include <fstream>
-#include "../../mpc/mpc_interface.h"
+#include "../../mpc_submodule/mpc_interface.h"   // EB: temporary change
+//#include "../../mpc/mpc_interface.h"
 
-#define PRINT_ERROR(x) fprintf(stderr, "%s:%i: %s , errno= %i \n", __FILE__, __LINE__, x,errno);
+/* CONFIGURATION MACROS: START */
 
 /* Uncomment below if needed to trace it */
-//#define TRACE_ME
+//#define TRACE_ME    /* remove prints if traced */
 
 // Very important to keep!
 #define USE_PROCESS_PINNING
-#define CPU_ID_PARENT 1 // CPU where parent process lives
+
+/* CONFIGURATION MACROS: END */
+
+#define PRINT_ERROR(x) ROS_WARN("%s:%i: %s , errno= %i \n", __FILE__, __LINE__, x,errno);
+
+
+
+#ifndef MPC_CPU_ID
+#define MPC_CPU_ID 1   /* Just some default value */
+#endif
+
 
 #ifdef TRACE_ME
 #ifdef ROS_INFO
@@ -67,38 +79,38 @@ static Eigen::Vector3d des_pos, des_rpy, des_vel, des_pqr;
 static double current_yaw = 0;
 
 /* Pointer to shared memory used to communicate between ROS and MPC */
-struct shared_data * msg;
+struct shared_data * data;
+double * shared_state;
+double * shared_input;
 
 double state[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 double ref[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 double input[4] = {0,0,0,0};
 
 
-void term_handler(int signum);
-
 static void publishTRPY(void)
 {
-	trpy_cmd.linear.z = msg->input[0]; // thrust
-	trpy_cmd.angular.x = msg->input[1]; // roll
-	trpy_cmd.angular.y = msg->input[2]; // pitch
-	trpy_cmd.angular.z = msg->input[3]; // yaw
+	trpy_cmd.linear.z = shared_input[0]; // thrust
+	trpy_cmd.angular.x = shared_input[1]; // roll
+	trpy_cmd.angular.y = shared_input[2]; // pitch
+	trpy_cmd.angular.z = shared_input[3]; // yaw
 	
-	mpc_state.pose.pose.position.x = msg->state[0] + ref[0]; // x
-	mpc_state.pose.pose.position.y = msg->state[1] + ref[1]; // y
-	mpc_state.pose.pose.position.z = msg->state[2] + ref[2]; // z
-	mpc_state.pose.pose.orientation.x = msg->state[3]; // roll
-	mpc_state.pose.pose.orientation.y = msg->state[4]; // pitch
-	mpc_state.pose.pose.orientation.z = msg->state[5]; // yaw
-	mpc_state.twist.twist.linear.x = msg->state[6]; // x dot
-	mpc_state.twist.twist.linear.y = msg->state[7]; // y dot
-	mpc_state.twist.twist.linear.z = msg->state[8]; // z dot
-	mpc_state.twist.twist.angular.x = msg->state[9]; // roll dot
-	mpc_state.twist.twist.angular.y = msg->state[10]; // pitch dot
-	mpc_state.twist.twist.angular.z = msg->state[11]; // yaw dot
-	mpc_state.pose.covariance[0] = msg->input[0];
-	mpc_state.pose.covariance[1] = msg->input[1];
-	mpc_state.pose.covariance[2] = msg->input[2];
-	mpc_state.pose.covariance[3] = msg->input[3];
+	mpc_state.pose.pose.position.x = shared_state[0] + ref[0]; // x
+	mpc_state.pose.pose.position.y = shared_state[1] + ref[1]; // y
+	mpc_state.pose.pose.position.z = shared_state[2] + ref[2]; // z
+	mpc_state.pose.pose.orientation.x = shared_state[3]; // roll
+	mpc_state.pose.pose.orientation.y = shared_state[4]; // pitch
+	mpc_state.pose.pose.orientation.z = shared_state[5]; // yaw
+	mpc_state.twist.twist.linear.x = shared_state[6]; // x dot
+	mpc_state.twist.twist.linear.y = shared_state[7]; // y dot
+	mpc_state.twist.twist.linear.z = shared_state[8]; // z dot
+	mpc_state.twist.twist.angular.x = shared_state[9]; // roll dot
+	mpc_state.twist.twist.angular.y = shared_state[10]; // pitch dot
+	mpc_state.twist.twist.angular.z = shared_state[11]; // yaw dot
+	mpc_state.pose.covariance[0] = shared_input[0];
+	mpc_state.pose.covariance[1] = shared_input[1];
+	mpc_state.pose.covariance[2] = shared_input[2];
+	mpc_state.pose.covariance[3] = shared_input[3];
 	
 	trpy_cmd_pub.publish(trpy_cmd);
 	mpc_state_pub.publish(mpc_state);
@@ -162,18 +174,18 @@ static void odom_cb(const nav_msgs::Odometry::ConstPtr &odom)
   double r, p, y;
   m.getRPY(r, p, y);
 
-  msg->state[0] = position[0] - ref[0];
-  msg->state[1] = position[1] - ref[1];
-  msg->state[2] = position[2] - ref[2];
-  msg->state[3] = r - ref[3];
-  msg->state[4] = p - ref[4];
-  msg->state[5] = y - ref[5];
-  msg->state[6] = velocity[0] - ref[6];
-  msg->state[7] = velocity[1] - ref[7];
-  msg->state[8] = velocity[2] - ref[8];
-  msg->state[9] = pqr[0] - ref[9];
-  msg->state[10] = pqr[1] - ref[10];
-  msg->state[11] = pqr[2] - ref[11];
+  shared_state[0] = position[0] - ref[0];
+  shared_state[1] = position[1] - ref[1];
+  shared_state[2] = position[2] - ref[2];
+  shared_state[3] = r - ref[3];
+  shared_state[4] = p - ref[4];
+  shared_state[5] = y - ref[5];
+  shared_state[6] = velocity[0] - ref[6];
+  shared_state[7] = velocity[1] - ref[7];
+  shared_state[8] = velocity[2] - ref[8];
+  shared_state[9] = pqr[0] - ref[9];
+  shared_state[10] = pqr[1] - ref[10];
+  shared_state[11] = pqr[2] - ref[11];
 
   geometry_msgs::Twist state_msg;
   state_msg.linear.x = position[0] - ref[0];
@@ -204,18 +216,18 @@ static void odom_matlab_cb(const nav_msgs::Odometry::ConstPtr &odom)
                         odom->pose.pose.orientation.y,
                         odom->pose.pose.orientation.z);
 
-  msg->state[0] = position[0] - ref[0];
-  msg->state[1] = position[1] - ref[1];
-  msg->state[2] = position[2] - ref[2];
-  msg->state[3] = rpy[0] - ref[3];
-  msg->state[4] = rpy[1] - ref[4];
-  msg->state[5] = rpy[2] - ref[5];
-  msg->state[6] = velocity[0] - ref[6];
-  msg->state[7] = velocity[1] - ref[7];
-  msg->state[8] = velocity[2] - ref[8];
-  msg->state[9] = pqr[0] - ref[9];
-  msg->state[10] = pqr[1] - ref[10];
-  msg->state[11] = pqr[2] - ref[11];
+  shared_state[0] = position[0] - ref[0];
+  shared_state[1] = position[1] - ref[1];
+  shared_state[2] = position[2] - ref[2];
+  shared_state[3] = rpy[0] - ref[3];
+  shared_state[4] = rpy[1] - ref[4];
+  shared_state[5] = rpy[2] - ref[5];
+  shared_state[6] = velocity[0] - ref[6];
+  shared_state[7] = velocity[1] - ref[7];
+  shared_state[8] = velocity[2] - ref[8];
+  shared_state[9] = pqr[0] - ref[9];
+  shared_state[10] = pqr[1] - ref[10];
+  shared_state[11] = pqr[2] - ref[11];
 
   geometry_msgs::Twist state_msg;
   state_msg.linear.x = position[0] - ref[0];
@@ -232,23 +244,23 @@ static void odom_matlab_cb(const nav_msgs::Odometry::ConstPtr &odom)
 
 static void write_debug(ros::Duration t){
 	std::string time = std::to_string(t.toSec());
-	std::string state = std::to_string(msg->state[0]) + ","
-		+ std::to_string(msg->state[1]) + ","
-		+ std::to_string(msg->state[2]) + ","
-		+ std::to_string(msg->state[3]) + ","
-		+ std::to_string(msg->state[4]) + ","
-		+ std::to_string(msg->state[5]) + ","
-		+ std::to_string(msg->state[6]) + ","
-		+ std::to_string(msg->state[7]) + ","
-		+ std::to_string(msg->state[8]) + ","
-		+ std::to_string(msg->state[9]) + ","
-		+ std::to_string(msg->state[10]) + ","
-		+ std::to_string(msg->state[11]);
+	std::string state = std::to_string(shared_state[0]) + ","
+		+ std::to_string(shared_state[1]) + ","
+		+ std::to_string(shared_state[2]) + ","
+		+ std::to_string(shared_state[3]) + ","
+		+ std::to_string(shared_state[4]) + ","
+		+ std::to_string(shared_state[5]) + ","
+		+ std::to_string(shared_state[6]) + ","
+		+ std::to_string(shared_state[7]) + ","
+		+ std::to_string(shared_state[8]) + ","
+		+ std::to_string(shared_state[9]) + ","
+		+ std::to_string(shared_state[10]) + ","
+		+ std::to_string(shared_state[11]);
 	
-	std::string input = std::to_string(msg->input[0]) + ","
-		+ std::to_string(msg->input[1]) + ","
-		+ std::to_string(msg->input[2]) + ","
-		+ std::to_string(msg->input[3]);
+	std::string input = std::to_string(shared_input[0]) + ","
+		+ std::to_string(shared_input[1]) + ","
+		+ std::to_string(shared_input[2]) + ","
+		+ std::to_string(shared_input[3]);
 	
 	debugfile << time << ",";
 	debugfile << state << ",";
@@ -270,7 +282,7 @@ int main(int argc, char **argv){
 #ifdef USE_PROCESS_PINNING
 	sched_set_prio_affinity(
 		sched_get_priority_max(SCHED_FIFO),
-		CPU_ID_PARENT);
+		MPC_CPU_ID);
 #endif
 	
 	// ********** Debug ********
@@ -296,7 +308,10 @@ int main(int argc, char **argv){
 	if (shm_id == -1) {
 		PRINT_ERROR("shmget failed");
 	}
-	msg = (struct shared_data *)shmat(shm_id, NULL, 0);
+	/* Setting up pointers to state/input arrays */
+	data = (struct shared_data *)shmat(shm_id, NULL, 0);
+	shared_state = (double*)(data+1); /* starts just after *data */
+	shared_input = shared_state+data->state_num;
 	
 	ros::NodeHandle n("~");
 
@@ -353,18 +368,18 @@ int main(int argc, char **argv){
 		 * us. The state was written in the shared memory
 		 * already by  publishTRPY();
 		 */
-		sem_post(msg->sems+MPC_SEM_STATE_WRITTEN);
+		sem_post(data->sems+MPC_SEM_STATE_WRITTEN);
 		/*
 		 * And now waiting for the optimal input to be
 		 * written
 		 */
-		sem_wait(msg->sems+MPC_SEM_INPUT_WRITTEN);
+		sem_wait(data->sems+MPC_SEM_INPUT_WRITTEN);
 		if (must_exit) {
 			shmdt(msg);
 			break;
 		}
 		
-		// printf("Got control action %f\n", msg->input[0]);
+		// printf("Got control action %f\n", shared_input[0]);
 		publishTRPY();
 		// if (debug){
 		// 	write_debug(t);
@@ -416,17 +431,5 @@ void sched_set_prio_affinity(uint32_t prio, int cpu_id)
 	snprintf(launched, STRLEN_COMMAND,
 		 "sudo chrt -f -p %d %d", prio, getpid());
 	system(launched);
-
-	/* EB: next code fails because it needs sudo */
-	/*
-	struct sched_param param;
-	
-	bzero(&param, sizeof(param));
-	param.sched_priority = prio;
-	if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
-		PRINT_ERROR("sched_setscheduler");
-		exit(-1);
-	}
-	*/
 #endif
 }

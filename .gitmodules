@@ -1,0 +1,3 @@
+[submodule "mpc_submodule"]
+	path = mpc_submodule
+	url = git@github.com:ebni/MPC.git
