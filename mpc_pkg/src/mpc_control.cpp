@@ -30,6 +30,7 @@
 #include <fstream>
 #include "../../mpc_submodule/mpc_interface.h"   // EB: temporary change
 //#include "../../mpc/mpc_interface.h"
+// #include <asctec_ll_updated/SICmd.h> // This is the trpy message type that goes to the ascted lower level controller
 
 /* CONFIGURATION MACROS: START */
 
