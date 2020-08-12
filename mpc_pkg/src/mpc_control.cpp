@@ -14,7 +14,8 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <quadrotor_msgs/SO3Command.h>
-#include <quadrotor_msgs/PositionCommand.h>
+#include <quadrotor_msgs/PositionCommand.h> // Position command message type, simulation
+#include <asctec_msgs/PositionCmd.h> // Position command message type, pelican
 #include <quadrotor_msgs/Corrections.h>
 #include <std_msgs/Bool.h>
 #include <Eigen/Geometry>
@@ -30,7 +31,7 @@
 #include <fstream>
 #include "../../mpc_submodule/mpc_interface.h"   // EB: temporary change
 //#include "../../mpc/mpc_interface.h"
-// #include <asctec_ll_updated/SICmd.h> // This is the trpy message type that goes to the ascted lower level controller
+#include <asctec_ll_updated/SICmd.h> // This is the trpy message type that goes to the ascted lower level controller
 
 /* CONFIGURATION MACROS: START */
 
@@ -70,11 +71,14 @@ std::string sim_type;
 static bool debug = true;
 static std::ofstream debugfile;
 static geometry_msgs::Twist trpy_cmd; // Control inputs (trpy) from MPC to simulator
+static asctec_ll_updated::SICmd trpy_cmd_pe; // commanded trpy from MPC, for pelican
 static nav_msgs::Odometry mpc_state; // State associated with control inputs
 static ros::Publisher trpy_cmd_pub; // Publisher for trpy_cmd
+static ros::Publisher trpy_cmd_pe_pub; // Publisher for pelican trpy
 static ros::Publisher mpc_state_pub; // Publisher for state with mpc
 static ros::Publisher state_pub; // Publisher of current state information, for debugging
 static ros::Subscriber position_cmd_sub;
+static ros::Subscriber position_cmd_pe_sub;
 static ros::Subscriber odom_sub;
 static Eigen::Vector3d des_pos, des_rpy, des_vel, des_pqr;
 static double current_yaw = 0;
@@ -93,10 +97,18 @@ void term_handler(int signum);
 
 static void publishTRPY(void)
 {
+        // Simulator commanded inputs
 	trpy_cmd.linear.z = shared_input[0]; // thrust
 	trpy_cmd.angular.x = shared_input[1]; // roll
 	trpy_cmd.angular.y = shared_input[2]; // pitch
 	trpy_cmd.angular.z = shared_input[3]; // yaw
+
+	// Pelican commanded inputs
+	trpy_cmd_pe.thrust = shared_input[0]; // thrust
+	trpy_cmd_pe.roll = shared_input[1]; // roll
+	trpy_cmd_pe.pitch = shared_input[2]; // pitch
+	trpy_cmd_pe.yaw = shared_input[3]; // yaw
+	trpy_cmd_pe.cmd[0] = trpy_cmd_pe.cmd[1] = trpy_cmd_pe.cmd[2] = trpy_cmd_pe.cmd[3] = true; // ?
 	
 	mpc_state.pose.pose.position.x = shared_state[0] + ref[0]; // x
 	mpc_state.pose.pose.position.y = shared_state[1] + ref[1]; // y
@@ -116,6 +128,7 @@ static void publishTRPY(void)
 	mpc_state.pose.covariance[3] = shared_input[3];
 	
 	trpy_cmd_pub.publish(trpy_cmd);
+	trpy_cmd_pe_pub.publish(trpy_cmd_pe);
 	mpc_state_pub.publish(mpc_state);
 }
 
@@ -138,6 +151,23 @@ static void position_cmd_cb(const quadrotor_msgs::PositionCommand::ConstPtr &cmd
 	// ROS_INFO("Inside position_cmd callback");
 	// ROS_INFO("Commanded Position: (%f,%f,%f)",x,y,z);
 	// std::cout << "X position: " << x;
+}
+
+static void position_cmd_pe_cb(const asctec_msgs::PositionCmd::ConstPtr &cmd){
+        des_pos = Eigen::Vector3d(cmd->position.x, cmd->position.y, cmd->position.z);
+	
+	ref[0] = des_pos[0];
+	ref[1] = des_pos[1];
+	ref[2] = des_pos[2];
+	ref[3] = 0;
+	ref[4] = 0;
+	ref[5] = 0;
+	ref[6] = 0;
+	ref[7] = 0;
+	ref[8] = 0;
+	ref[9] = 0;
+	ref[10] = 0;
+	ref[11] = 0;
 }
 
 static void position_Matlab_cmd_cb(const geometry_msgs::Twist::ConstPtr &cmd)
@@ -321,6 +351,7 @@ int main(int argc, char **argv){
 	ros::NodeHandle n("~");
 
 	trpy_cmd_pub = n.advertise<geometry_msgs::Twist>(ros::this_node::getNamespace()+"/mpc_cmd",1);
+	trpy_cmd_pe_pub = n.advertise<asctec_ll_updated::SICmd>(ros::this_node::getNamespace()+"/cmd_si",1);
 	mpc_state_pub = n.advertise<nav_msgs::Odometry>(ros::this_node::getNamespace()+"/mpc_state",1);
 	state_pub = n.advertise<geometry_msgs::Twist>(ros::this_node::getNamespace()+"/state",1);
 	
@@ -336,9 +367,10 @@ int main(int argc, char **argv){
 	 */
 	ros::Rate rate(100);
 
-	position_cmd_sub = n.subscribe(ros::this_node::getNamespace()+"/position_cmd",
+	position_cmd_sub = n.subscribe("/position_cmd",
 					       10, &position_cmd_cb,
-					       ros::TransportHints().tcpNoDelay());
+				       ros::TransportHints().tcpNoDelay()); // Sim position command callback (TODO CHANGE TOPIC NAME)
+	position_cmd_pe_sub = n.subscribe("/asctec/position_cmd",10, &position_cmd_pe_cb); // Pelican position command callback
 	odom_sub = n.subscribe(ros::this_node::getNamespace()+"/odom", 10, &odom_cb,
 				       		ros::TransportHints().tcpNoDelay());
 	

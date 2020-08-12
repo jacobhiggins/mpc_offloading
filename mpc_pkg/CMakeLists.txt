@@ -143,6 +143,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 ## The recommended prefix ensures that target names across packages don't collide
 ## add_executable(test src/test.cpp)
 add_executable(mpc_control src/mpc_control.cpp)
+add_executable(wypts_to_poscmd src/wypts_to_poscmd.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -156,6 +157,9 @@ add_executable(mpc_control src/mpc_control.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(mpc_control
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(wypts_to_poscmd
   ${catkin_LIBRARIES}
 )
 
