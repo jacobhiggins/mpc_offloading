@@ -43,7 +43,7 @@
 
 /* CONFIGURATION MACROS: END */
 
-#define PRINT_ERROR(x) ROS_WARN("%s:%i: %s , errno= %i \n", __FILE__, __LINE__, x,errno);
+#define PRINT_ERROR(x) ROS_WARN("%s:%i: %s , error= %i \n", __FILE__, __LINE__, x,errno);
 
 
 
