@@ -15,7 +15,7 @@
 #include <geometry_msgs/Twist.h>
 #include <quadrotor_msgs/SO3Command.h>
 #include <quadrotor_msgs/PositionCommand.h> // Position command message type, simulation
-#include <asctec_msgs/PositionCmd.h> // Position command message type, pelican
+//#include <asctec_msgs/PositionCmd.h> // Position command message type, pelican
 #include <quadrotor_msgs/Corrections.h>
 #include <std_msgs/Bool.h>
 #include <Eigen/Geometry>
@@ -31,7 +31,7 @@
 #include <fstream>
 #include "../../mpc_submodule/mpc_interface.h"   // EB: temporary change
 //#include "../../mpc/mpc_interface.h"
-#include <asctec_ll_updated/SICmd.h> // This is the trpy message type that goes to the ascted lower level controller
+//#include <asctec_ll_updated/SICmd.h> // This is the trpy message type that goes to the ascted lower level controller
 
 /* CONFIGURATION MACROS: START */
 
