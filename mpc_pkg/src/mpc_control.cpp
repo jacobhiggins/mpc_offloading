@@ -351,7 +351,7 @@ int main(int argc, char **argv){
 	ros::NodeHandle n("~");
 
 	trpy_cmd_pub = n.advertise<geometry_msgs::Twist>(ros::this_node::getNamespace()+"/mpc_cmd",1);
-	trpy_cmd_pe_pub = n.advertise<asctec_ll_updated::SICmd>(ros::this_node::getNamespace()+"/cmd_si",1);
+	// trpy_cmd_pe_pub = n.advertise<asctec_ll_updated::SICmd>(ros::this_node::getNamespace()+"/cmd_si",1);
 	mpc_state_pub = n.advertise<nav_msgs::Odometry>(ros::this_node::getNamespace()+"/mpc_state",1);
 	state_pub = n.advertise<geometry_msgs::Twist>(ros::this_node::getNamespace()+"/state",1);
 	
@@ -367,10 +367,10 @@ int main(int argc, char **argv){
 	 */
 	ros::Rate rate(100);
 
-	position_cmd_sub = n.subscribe("/position_cmd",
+	position_cmd_sub = n.subscribe(ros::this_node::getNamespace()+"/position_cmd",
 					       10, &position_cmd_cb,
 				       ros::TransportHints().tcpNoDelay()); // Sim position command callback (TODO CHANGE TOPIC NAME)
-	position_cmd_pe_sub = n.subscribe("/asctec/position_cmd",10, &position_cmd_pe_cb); // Pelican position command callback
+	// position_cmd_pe_sub = n.subscribe("/asctec/position_cmd",10, &position_cmd_pe_cb); // Pelican position command callback
 	odom_sub = n.subscribe(ros::this_node::getNamespace()+"/odom", 10, &odom_cb,
 				       		ros::TransportHints().tcpNoDelay());
 	
