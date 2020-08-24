@@ -104,10 +104,10 @@ static void publishTRPY(void)
 	trpy_cmd.angular.z = shared_input[3]; // yaw
 
 	// Pelican commanded inputs
-	trpy_cmd_pe.thrust = shared_input[0]; // thrust
-	trpy_cmd_pe.roll = shared_input[1]; // roll
-	trpy_cmd_pe.pitch = shared_input[2]; // pitch
-	trpy_cmd_pe.yaw = shared_input[3]; // yaw
+	// trpy_cmd_pe.thrust = shared_input[0]; // thrust
+	// trpy_cmd_pe.roll = shared_input[1]; // roll
+	// trpy_cmd_pe.pitch = shared_input[2]; // pitch
+	// trpy_cmd_pe.yaw = shared_input[3]; // yaw
 	//trpy_cmd_pe.cmd[0] = trpy_cmd_pe.cmd[1] = trpy_cmd_pe.cmd[2] = trpy_cmd_pe.cmd[3] = true; // ?
 	
 	mpc_state.pose.pose.position.x = shared_state[0] + ref[0]; // x
