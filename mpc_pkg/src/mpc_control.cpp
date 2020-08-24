@@ -128,7 +128,7 @@ static void publishTRPY(void)
 	mpc_state.pose.covariance[3] = shared_input[3];
 	
 	trpy_cmd_pub.publish(trpy_cmd);
-	trpy_cmd_pe_pub.publish(trpy_cmd_pe);
+	//trpy_cmd_pe_pub.publish(trpy_cmd_pe);
 	mpc_state_pub.publish(mpc_state);
 }
 
