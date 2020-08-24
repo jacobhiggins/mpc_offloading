@@ -153,22 +153,22 @@ static void position_cmd_cb(const quadrotor_msgs::PositionCommand::ConstPtr &cmd
 	// std::cout << "X position: " << x;
 }
 
-static void position_cmd_pe_cb(const asctec_msgs::PositionCmd::ConstPtr &cmd){
-        des_pos = Eigen::Vector3d(cmd->position.x, cmd->position.y, cmd->position.z);
+// static void position_cmd_pe_cb(const asctec_msgs::PositionCmd::ConstPtr &cmd){
+//         des_pos = Eigen::Vector3d(cmd->position.x, cmd->position.y, cmd->position.z);
 	
-	ref[0] = des_pos[0];
-	ref[1] = des_pos[1];
-	ref[2] = des_pos[2];
-	ref[3] = 0;
-	ref[4] = 0;
-	ref[5] = 0;
-	ref[6] = 0;
-	ref[7] = 0;
-	ref[8] = 0;
-	ref[9] = 0;
-	ref[10] = 0;
-	ref[11] = 0;
-}
+// 	ref[0] = des_pos[0];
+// 	ref[1] = des_pos[1];
+// 	ref[2] = des_pos[2];
+// 	ref[3] = 0;
+// 	ref[4] = 0;
+// 	ref[5] = 0;
+// 	ref[6] = 0;
+// 	ref[7] = 0;
+// 	ref[8] = 0;
+// 	ref[9] = 0;
+// 	ref[10] = 0;
+// 	ref[11] = 0;
+// }
 
 static void position_Matlab_cmd_cb(const geometry_msgs::Twist::ConstPtr &cmd)
 {
