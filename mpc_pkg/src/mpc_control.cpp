@@ -71,7 +71,7 @@ std::string sim_type;
 static bool debug = true;
 static std::ofstream debugfile;
 static geometry_msgs::Twist trpy_cmd; // Control inputs (trpy) from MPC to simulator
-static asctec_ll_updated::SICmd trpy_cmd_pe; // commanded trpy from MPC, for pelican
+//static asctec_ll_updated::SICmd trpy_cmd_pe; // commanded trpy from MPC, for pelican
 static nav_msgs::Odometry mpc_state; // State associated with control inputs
 static ros::Publisher trpy_cmd_pub; // Publisher for trpy_cmd
 static ros::Publisher trpy_cmd_pe_pub; // Publisher for pelican trpy
