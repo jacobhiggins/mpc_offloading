@@ -126,6 +126,8 @@ static void publishTRPY(void)
 	mpc_state.pose.covariance[1] = shared_input[1];
 	mpc_state.pose.covariance[2] = shared_input[2];
 	mpc_state.pose.covariance[3] = shared_input[3];
+	mpc_state.pose.covariance[4] = data->stats_dbl[MPC_STATS_DBL_TIME];
+	// printf("%f\n",data->stats_dbl[MPC_STATS_DBL_TIME]);
 	
 	trpy_cmd_pub.publish(trpy_cmd);
 	//trpy_cmd_pe_pub.publish(trpy_cmd_pe);
@@ -417,10 +419,13 @@ int main(int argc, char **argv){
 		 * written
 		 */
 		sem_wait(data->sems+MPC_SEM_INPUT_WRITTEN);
+
+		// must_exit = true if C-c is pressed
 		if (must_exit) {
 			shmdt(data);
 			break;
 		}
+		
 		
 		// printf("Got control action %f\n", shared_input[0]);
 		publishTRPY();
